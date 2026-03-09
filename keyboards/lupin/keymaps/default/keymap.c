@@ -39,7 +39,27 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_LALT, TD(TD_LCTRL_CAPS_WORD) , MO(_SYMB) , LT(_EXTRA, KC_ENT), KC_LGUI,    KC_NO,   LT(_NUM, KC_SPC), LT(_NAV, KC_ESC), KC_RCTL, KC_RALT
   ),
 
- /* QWERTY
+/*
+ * SYMB
+ * ,-----------------------------------------.                           ,----------------------------------------.
+ * |  `   |   1  |   2  |   <  |   >  |   [  |                          |   ]  |   &  |   |  |   `  |      |      |
+ * |------+------+------+------+------+------|--------|         ,-----|------+------+------+------+------+------|
+ * |      |   !  |   =  |   -  |   (  |   {  |        |         |      |   }  |   )  |   .  |   #  |   @  |      |
+ * |------+------+------+------+------+------|-------|        |------+------+------+------+------+------+------|
+ * |      |   %  |   $  |   +  |   _  |      |        |        |      |   *  |   ^  |   ;  |   :  |   \  |      |
+ * `-----------------------------------------|-------|      |-------|-----------------------------------------'
+ *               | LAlt |TD CTL| SYMB |EXTRA | /ENTER  /       \SPACE \  | NUM  | NAV  | RCtl | RAlt |
+ *               `-------------------------------------'        '------''----------------------------'
+ */
+ [_SYMB] = LAYOUT(
+    KC_GRV,  KC_1,    KC_2,   S(KC_COMM), S(KC_DOT),  KC_LBRC,                              KC_RBRC,  KC_AMPR, S(KC_BSLS), KC_GRV,  KC_TRNS, KC_TRNS,
+    KC_TRNS, KC_EXLM, KC_EQL, KC_MINUS,   KC_LPRN,    KC_LCBR,  KC_TRNS,       KC_TRNS,     KC_RCBR,  KC_RPRN, KC_DOT,     KC_HASH, KC_AT,   KC_TRNS,
+    KC_TRNS, KC_PERC, KC_DLR, KC_PLUS,    S(KC_MINS), XXXXXXX,               KC_TRNS,     S(KC_8),  S(KC_6), KC_SCLN,    KC_COLN, KC_BSLS, KC_TRNS,
+          KC_LALT, TD(TD_LCTRL_CAPS_WORD), MO(_SYMB), LT(_EXTRA, KC_ENT), KC_LGUI,    KC_NO, LT(_NUM, KC_SPC), LT(_NAV, KC_ESC), KC_RCTL, KC_RALT
+  ),
+
+/*
+ * NAV
  * ,-----------------------------------------.                           ,----------------------------------------.
  * | ESC  |   Q  |   W  |   E  |   R  |   T  |                          |   Y  |   U  |   I  |   O  |   P  |   ' |
  * |------+------+------+------+------+------|--------|         ,-----|------+------+------+------+------+------|
