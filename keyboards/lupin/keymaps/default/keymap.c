@@ -80,7 +80,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   )};
 
 
-void ctrl_capsword_finished(qk_tap_dance_state_t *state, void *user_data) {
+void ctrl_capsword_finished(tap_dance_state_t *state, void *user_data) {
     if (state->count == 1) {
         if (state->pressed) {
             register_code(KC_LCTL);   // hold ctrl
@@ -92,7 +92,7 @@ void ctrl_capsword_finished(qk_tap_dance_state_t *state, void *user_data) {
     }
 }
 
-void ctrl_capsword_reset(qk_tap_dance_state_t *state, void *user_data) {
+void ctrl_capsword_reset(tap_dance_state_t *state, void *user_data) {
     unregister_code(KC_LCTL);
 }
 
@@ -149,6 +149,7 @@ bool caps_word_press_user(uint16_t keycode) {
             return false;  // Deactivate Caps Word.
     }
 }
+
 
 
 #ifdef OLED_ENABLE
