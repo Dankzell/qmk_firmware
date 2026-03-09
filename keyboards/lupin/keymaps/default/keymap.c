@@ -14,6 +14,10 @@ enum lupin_layers {
     _EXTRA,
 };
 
+enum {
+    TD_LCTRL_CAPS_WORD
+};
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 /*
  * QWERTY
@@ -32,7 +36,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_ESC,   KC_Q,   KC_W        , KC_E        , KC_R         , KC_T,                               KC_Y,      KC_U      , KC_I        , KC_O        , KC_P,     KC_QUOT,
     KC_TAB,   KC_A,   LALT_T(KC_S), LCTL_T(KC_D), LSFT_T(KC_F) , KC_G, KC_NO,              KC_NO,    KC_H,      RSFT_T(KC_J), RCTL_T(KC_K), RALT_T(KC_L), KC_SCLN,  KC_BSPC,
     KC_LSFT,  KC_Z,   KC_X        , KC_C        , KC_V         , KC_B,                     KC_NO,    KC_N,      KC_M        , KC_COMM     , KC_DOT      , KC_SLSH,  KC_RSFT,
-                    KC_LALT, KC_LCTL , MO(_SYMB) , LT(_EXTRA, KC_ENT), KC_LGUI,            KC_NO,   LT(_NUM, KC_SPC), LT(_NAV, KC_ESC), KC_RCTL, KC_RALT
+        KC_LALT, TD(TD_LCTRL_CAPS_WORD) , MO(_SYMB) , LT(_EXTRA, KC_ENT), KC_LGUI,    KC_NO,   LT(_NUM, KC_SPC), LT(_NAV, KC_ESC), KC_RCTL, KC_RALT
   ),
 
  /* QWERTY
@@ -72,8 +76,29 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_TRNS,  KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,                            KC_KP_MINUS,  KC_KP_7, KC_KP_8,  KC_KP_9, KC_KP_SLASH,    KC_DEL,
     KC_TRNS,  KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_NO,          KC_NUM,    KC_KP_PLUS,   KC_KP_4, KC_KP_5,  KC_KP_6, KC_KP_ASTERISK, KC_BSPC,
     KC_TRNS,  KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,                 KC_NO,     KC_KP_0,      KC_KP_1, KC_KP_2,  KC_KP_3, KC_KP_DOT,    KC_KP_ENTER,
-                        KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,    LT(_NUM, KC_ESC), KC_TRNS, KC_TRNS, KC_TRNSn, KC_TRNS
+                        KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,    LT(_NUM, KC_ESC), KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS
   )};
+
+
+void ctrl_capsword_finished(qk_tap_dance_state_t *state, void *user_data) {
+    if (state->count == 1) {
+        if (state->pressed) {
+            register_code(KC_LCTL);   // hold ctrl
+        } else {
+            tap_code(KC_LCTL);        // tap ctrl
+        }
+    } else if (state->count == 2) {
+        tap_code16(QK_CAPS_WORD_TOGGLE);
+    }
+}
+
+void ctrl_capsword_reset(qk_tap_dance_state_t *state, void *user_data) {
+    unregister_code(KC_LCTL);
+}
+
+tap_dance_action_t tap_dance_actions[] = {
+    [TD_LCTRL_CAPS_WORD] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, ctrl_capsword_finished, ctrl_capsword_reset)
+};
 
 
 bool encoder_update_user(uint8_t index, bool clockwise) {
@@ -103,6 +128,26 @@ bool dip_switch_update_user(uint8_t index, bool active) {
       break;
   }
   return true;
+}
+
+bool caps_word_press_user(uint16_t keycode) {
+    switch (keycode) {
+        // Keycodes that continue Caps Word, with shift applied.
+        case KC_A ... KC_Z:
+        case KC_MINS:
+            add_weak_mods(MOD_BIT(KC_LSFT));  // Apply shift to next key.
+            return true;
+
+        // Keycodes that continue Caps Word, without shifting.
+        case KC_1 ... KC_0:
+        case KC_BSPC:
+        case KC_DEL:
+        case KC_UNDS:
+            return true;
+
+        default:
+            return false;  // Deactivate Caps Word.
+    }
 }
 
 

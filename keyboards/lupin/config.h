@@ -9,3 +9,7 @@
 #define I2C_DRIVER I2CD1
 #define I2C1_SDA_PIN GP15
 #define I2C1_SCL_PIN GP14
+
+// #define AUTO_SHIFT_TIMEOUT 150
+// #define RETRO_SHIFT 200
+// #define AUTO_SHIFT_MODIFIERS
