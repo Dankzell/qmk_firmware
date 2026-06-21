@@ -242,6 +242,22 @@ bool caps_word_press_user(uint16_t keycode) {
     }
 }
 
+uint16_t get_quick_tap_term(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        // Home row mods: double-tap then hold repeats the tapped key
+        // (QMK's default Quick Tap Term behavior) instead of holding the mod.
+        case LALT_T(KC_S):
+        case LCTL_T(KC_D):
+        case LSFT_T(KC_F):
+        case RSFT_T(KC_J):
+        case RCTL_T(KC_K):
+        case RALT_T(KC_L):
+            return QUICK_TAP_TERM;
+        default:
+            return QUICK_TAP_TERM;
+    }
+}
+
 void keyboard_post_init_user(void) {
     debug_enable = true;
     print("Keyboard started\n");

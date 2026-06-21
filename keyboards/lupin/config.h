@@ -22,6 +22,10 @@
 // #define RETRO_SHIFT 200
 // #define AUTO_SHIFT_MODIFIERS
 //
+// Lets home row mods use a per-key Quick Tap Term (see get_quick_tap_term in keymap.c):
+// double-tapping then holding repeats the tapped key instead of holding the modifier.
+#define QUICK_TAP_TERM_PER_KEY
+//
 // Tweak these according to keyboard and joycon orientation
 #define ANALOG_JOYSTICK_X_AXIS_PIN GP28
 #define ANALOG_JOYSTICK_Y_AXIS_PIN GP29
