@@ -96,6 +96,11 @@ combo_t key_combos[COMBO_LENGTH] = {
     [C_UNDER]     = COMBO(combo_under,     KC_UNDS),
 };
 
+enum joystick_modes {
+    _MOUSE,
+    _ARROW
+};
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 /*
  * QWERTY (mirrors tiny-micro default_layer)
@@ -109,12 +114,13 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *               | LGUI | LAlt | LCtl | SYMB | /ENT  /       \NUM/SPC\  |NAV/ESC| RCtl | RAlt | RGUI |
  *               `-------------------------------------'        '-------''---------------------------'
  */
-[_QWERTY] = LAYOUT(
-    KC_GRV,          KC_Q,         KC_W,         KC_E,         KC_R,         KC_T,                               KC_Y,           KC_U,         KC_I,         KC_O,        KC_P,            KC_QUOT,
-    KC_TAB,          LGUI_T(KC_A), LALT_T(KC_S), LCTL_T(KC_D), LSFT_T(KC_F), KC_G, ENC_MOD,     KC_NO,          KC_H,           RSFT_T(KC_J), RCTL_T(KC_K), RALT_T(KC_L), RGUI_T(KC_SCLN), KC_BSPC,
-    TD(TD_OSM_CAPS), KC_Z,         KC_X,         KC_C,         KC_V,         KC_B,        KC_NO,                 KC_N,           KC_M,         KC_COMM,      KC_DOT,      KC_SLSH,         KC_RSFT,
-    KC_LALT, KC_LCTL, MO(_SYMB), KC_ENT, KC_LGUI,  KC_RGUI,  LT(_NUM, KC_SPC), LT(_NAV, KC_ESC), KC_RCTL, KC_RALT
-),
+
+ [_QWERTY] = LAYOUT(
+    KC_GRV,   KC_Q,   KC_W        , KC_E        , KC_R         , KC_T,                               KC_Y,      KC_U      , KC_I        , KC_O        , KC_P,     KC_QUOT,
+    KC_TAB,   KC_A,   LALT_T(KC_S), LCTL_T(KC_D), LSFT_T(KC_F) , KC_G, KC_NO,              KC_NO,    KC_H,      RSFT_T(KC_J), RCTL_T(KC_K), RALT_T(KC_L), KC_SCLN,  KC_BSPC,
+    KC_LSFT,  KC_Z,   KC_X        , KC_C        , KC_V         , KC_B,                     KC_NO,    KC_N,      KC_M        , KC_COMM     , KC_DOT      , KC_SLSH,  KC_RSFT,
+        KC_LALT, LCTL_T(KC_TAB) , LT(KC_ESC, _SYMB) , LT(_EXTRA, KC_ENT), KC_LGUI,    KC_NO,   LT(_NUM, KC_SPC), LT(_NAV, KC_BSPC), RCTL_T(KC_ESC), KC_RALT
+  ),
 
 /*
  * SYMB (mirrors tiny-micro symb_layer)
@@ -128,12 +134,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *               |      |      |      | SYMB |       |       |       |      |      |      |      |
  *               `-------------------------------------'        '-------''---------------------------'
  */
-[_SYMB] = LAYOUT(
-    KC_GRV,  KC_1,    KC_2,    S(KC_COMM), S(KC_DOT), KC_LBRC,                               KC_RBRC, KC_AMPR, S(KC_BSLS), KC_GRV,  KC_TRNS, KC_TRNS,
-    KC_TRNS, KC_EXLM, KC_EQL,  KC_MINS,    KC_LPRN,   KC_LCBR, KC_TRNS,      KC_TRNS,        KC_RCBR, KC_RPRN, KC_DOT,     KC_HASH, KC_AT,   KC_TRNS,
-    KC_TRNS, KC_PERC, KC_DLR,  KC_PLUS,    KC_UNDS,   XXXXXXX,          KC_NO,               KC_ASTR, KC_CIRC, KC_SCLN,    KC_COLN, KC_BSLS, KC_TRNS,
-    KC_TRNS, KC_TRNS, KC_TRNS, KC_NO, KC_TRNS,    KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS
-),
+ [_SYMB] = LAYOUT(
+    KC_GRV,  KC_1,    KC_2,   S(KC_COMM), S(KC_DOT),  KC_LBRC,                              KC_RBRC,  KC_AMPR, S(KC_BSLS), KC_GRV,  KC_TRNS, KC_DEL,
+    KC_TRNS, KC_EXLM, KC_EQL, KC_MINUS,   KC_LPRN,    KC_LCBR,  KC_TRNS,       KC_TRNS,     KC_RCBR,  KC_RPRN, KC_DOT,     KC_HASH, KC_AT,   KC_TRNS,
+    KC_TRNS, KC_PERC, KC_DLR, KC_PLUS,    S(KC_MINS), XXXXXXX,               KC_TRNS,     S(KC_8),  S(KC_6), KC_SCLN,    KC_COLN, KC_BSLS, KC_TRNS,
+          KC_LALT, KC_TRNS, MO(_SYMB), LT(_EXTRA, KC_ENT), KC_TRNS,    KC_NO, LT(_NUM, KC_SPC), LT(_NAV, KC_ESC), KC_RCTL, KC_RALT
+  ),
 
 /*
  * NAV (mirrors tiny-micro nav_layer)
@@ -147,12 +153,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *               | LCtl | SYMB | ENT  | LGUI |       |       | Spc  |      | RCtl | RAlt |      |
  *               `-------------------------------------'        '-------''---------------------------'
  */
-[_NAV] = LAYOUT(
-    KC_ESC,  KC_Q,    KC_W,         KC_E,         KC_R,         KC_T,                               C(KC_DEL), C(KC_LEFT), KC_NO,   C(KC_RIGHT), C(KC_BSPC), KC_DEL,
-    KC_TAB,  KC_A,    LALT_T(KC_S), LCTL_T(KC_D), LSFT_T(KC_F), KC_G, KC_NO,      KC_NO,           KC_LEFT,   KC_DOWN,    KC_UP,   KC_RIGHT,    KC_HOME,    KC_TRNS,
-    KC_TRNS, KC_Z,    KC_X,         KC_C,         KC_V,         KC_CAPS,      KC_NO,                KC_NO,     KC_PGDN,    KC_PGUP, KC_NO,       KC_END,     KC_TRNS,
-    KC_LCTL, MO(_SYMB), KC_ENT, KC_LGUI, KC_NO,    KC_SPC, KC_TRNS, KC_RCTL, KC_RALT, KC_NO
-),
+
+ [_NAV] = LAYOUT(
+    KC_ESC,   KC_Q,   KC_W        , KC_E        , KC_R         , KC_T,                               C(KC_DEL), C(KC_LEFT), KC_NO,   C(KC_RIGHT), C(KC_BSPC), KC_DEL,
+    KC_TAB,   KC_A,   LALT_T(KC_S), LCTL_T(KC_D), LSFT_T(KC_F) , KC_G, KC_NO,              KC_NO,    KC_LEFT,   KC_DOWN,    KC_UP,   KC_RIGHT,    KC_HOME,    KC_TRNS,
+    KC_LSFT,  KC_Z,   KC_X        , KC_C        , KC_V         , KC_B,                     KC_NO,    KC_NO,     KC_PGDN,    KC_PGUP, KC_NO,       KC_END,     KC_TRNS,
+                    KC_LALT, KC_LCTL , MO(_SYMB) , LT(_EXTRA, KC_ENT), KC_LGUI,            KC_NO,   LT(_NUM, KC_SPC), LT(_NAV, KC_ESCAPE), KC_RCTL, KC_RALT
+  ),
+
 
 /*
  * NUM (mirrors tiny-micro num_layer; BT keycodes have no QMK equivalent, left side has F-keys)
@@ -274,33 +282,9 @@ bool caps_word_press_user(uint16_t keycode) {
     }
 }
 
-
-#ifdef OLED_ENABLE
-bool oled_task_user(void) {
-    // Host Keyboard Layer Status
-    oled_write_P(PSTR("Layer: "), false);
-
-    switch (get_highest_layer(layer_state)) {
-        case _QWERTY:
-            oled_write_P(PSTR("Default\n"), false);
-            break;
-        case _NAV:
-            oled_write_P(PSTR("NAV\n"), false);
-            break;
-        case _NUM:
-            oled_write_P(PSTR("NUM\n"), false);
-            break;
-        default:
-            // Or use the write_ln shortcut over adding '\n' to the end of your string
-            oled_write_ln_P(PSTR("Undefined"), false);
-    }
-
-    // Host Keyboard LED Status
-    led_t led_state = host_keyboard_led_state();
-    oled_write_P(led_state.num_lock ? PSTR("NUM ") : PSTR("    "), false);
-    oled_write_P(led_state.caps_lock ? PSTR("CAP ") : PSTR("    "), false);
-    oled_write_P(led_state.scroll_lock ? PSTR("SCR ") : PSTR("    "), false);
-
-    return false;
+void keyboard_post_init_user(void) {
+    debug_enable = true;
+    print("Keyboard started\n");
 }
-#endif
+
+
