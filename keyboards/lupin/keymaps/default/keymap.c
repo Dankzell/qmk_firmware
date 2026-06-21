@@ -1,12 +1,19 @@
 // Copyright 2023 QMK
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <stdint.h>
+#include "action.h"
+#include "action_layer.h"
+#include "caps_word.h"
 #include "keycodes.h"
+#include "process_tap_dance.h"
+#include "quantum.h"
 #include "quantum_keycodes.h"
 #include "report.h"
 #include QMK_KEYBOARD_H
 #include <stdbool.h>
 #include "print.h"
+#include "mousekey.h"
 
 enum lupin_layers {
     _QWERTY,
@@ -16,8 +23,47 @@ enum lupin_layers {
     _EXTRA,
 };
 
+enum lupin_keycode {
+    ENC_MOD = SAFE_RANGE
+};
+
+enum rotary_encoder_1_layers {
+    _VOL,
+    _SCROLL_X,
+};
+
+enum rotary_encoder_2_layers {
+    _ZOOM,
+    _SCROLL_Y,
+};
+
+static uint8_t enc_mode_1[2] = {_VOL, _SCROLL_X};
+static uint8_t enc_mode_2[2] = {_ZOOM, _SCROLL_Y};
+static bool enc_mod_active = false;
+static uint8_t enc_idx[2] = {0, 0};
+
 enum {
-    TD_LCTRL_CAPS_WORD
+    TD_LGUI_CAPS_WORD
+};
+
+void gui_caps_word_finished(tap_dance_state_t *state, void *user_data) {
+    if (state->count == 1) {
+        if (state->pressed) {
+            register_code(KC_LGUI);
+        } else {
+            tap_code(KC_LGUI);
+        }
+    } else if (state->count == 2) {
+        caps_word_toggle();
+    }
+}
+
+void gui_caps_word_reset(tap_dance_state_t *state, void *user_data) {
+    unregister_code(KC_LGUI);
+}
+
+tap_dance_action_t tap_dance_actions[] = {
+    [TD_LGUI_CAPS_WORD] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, gui_caps_word_finished, gui_caps_word_reset)
 };
 
 enum joystick_modes {
@@ -29,7 +75,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 /*
  * QWERTY
  * ,-----------------------------------------.                           ,----------------------------------------.
- * | ESC  |   Q  |   W  |   E  |   R  |   T  |                          |   Y  |   U  |   I  |   O  |   P  |   ' |
+ * |  ``  |   Q  |   W  |   E  |   R  |   T  |                          |   Y  |   U  |   I  |   O  |   P  |   ' |
  * |------+------+------+------+------+------|--------|         ,-----|------+------+------+------+------+------|
  * | Tab  |   A  |   S  |   D  |   F  |   G  | stuff |         | Stuff|  H  |   J  |   K  |   L  |   ;  | Bspc |
  * |------+------+------+------+------+------|-------|        |------+-----+-------+------+------+------+------|
@@ -62,7 +108,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_GRV,  KC_1,    KC_2,   S(KC_COMM), S(KC_DOT),  KC_LBRC,                              KC_RBRC,  KC_AMPR, S(KC_BSLS), KC_GRV,  KC_TRNS, KC_DEL,
     KC_TRNS, KC_EXLM, KC_EQL, KC_MINUS,   KC_LPRN,    KC_LCBR,  KC_TRNS,       KC_TRNS,     KC_RCBR,  KC_RPRN, KC_DOT,     KC_HASH, KC_AT,   KC_TRNS,
     KC_TRNS, KC_PERC, KC_DLR, KC_PLUS,    S(KC_MINS), XXXXXXX,               KC_TRNS,     S(KC_8),  S(KC_6), KC_SCLN,    KC_COLN, KC_BSLS, KC_TRNS,
-          KC_LALT, TD(TD_LCTRL_CAPS_WORD), MO(_SYMB), LT(_EXTRA, KC_ENT), KC_LGUI,    KC_NO, LT(_NUM, KC_SPC), LT(_NAV, KC_ESC), KC_RCTL, KC_RALT
+          KC_LALT, KC_TRNS, MO(_SYMB), LT(_EXTRA, KC_ENT), KC_TRNS,    KC_NO, LT(_NUM, KC_SPC), LT(_NAV, KC_ESC), KC_RCTL, KC_RALT
   ),
 
 /*
@@ -70,7 +116,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * ,-----------------------------------------.                           ,----------------------------------------.
  * | ESC  |   Q  |   W  |   E  |   R  |   T  |                          |   Y  |   U  |   I  |   O  |   P  |   ' |
  * |------+------+------+------+------+------|--------|         ,-----|------+------+------+------+------+------|
- * | Tab  |   A  |   S  |   D  |   F  |   G  | stuff |         | Stuff|  H  |   J  |   K  |   L  |   ;  | Bspc |
+ * | Tab  |   A  |   S  |   D  |   F  |   G  | stuff |         | Stuff| lA   | dA   |  uA  |  rA  |   ;  | Bspc |
  * |------+------+------+------+------+------|-------|        |------+-----+-------+------+------+------+------|
  * |LShift|   Z  |   X  |   C  |   V  |   B  | XXXX  |       | Stuff |  N  |   M  |   ,  |   .  |   /  |RShift|
  * `-----------------------------------------|-------|      |-------|-----------------------------------------'
@@ -106,41 +152,54 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                         KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,    LT(_NUM, KC_ESC), KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS
   )};
 
-
-void ctrl_capsword_finished(tap_dance_state_t *state, void *user_data) {
-    if (state->count == 1) {
-        if (state->pressed) {
-            register_code(KC_LCTL);   // hold ctrl
-        } else {
-            tap_code(KC_LCTL);        // tap ctrl
-        }
-    } else if (state->count == 2) {
-        tap_code16(QK_CAPS_WORD_TOGGLE);
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case ENC_MOD:
+            if (record->event.pressed) {
+                enc_mod_active = true;
+            }
+            return false;
     }
+    return true;
 }
-
-void ctrl_capsword_reset(tap_dance_state_t *state, void *user_data) {
-    unregister_code(KC_LCTL);
-}
-
-tap_dance_action_t tap_dance_actions[] = {
-    [TD_LCTRL_CAPS_WORD] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, ctrl_capsword_finished, ctrl_capsword_reset)
-};
 
 
 bool encoder_update_user(uint8_t index, bool clockwise) {
-    if (index == 0) { /* First encoder */
-        if (clockwise) {
-            tap_code(KC_VOLU);
+    if (enc_mod_active) {
+        enc_mod_active = false;
+        uint8_t mode_count = (index == 0) ? 2 : 2;
+        enc_idx[index] = (enc_idx[index] + (clockwise ? 1 : mode_count - 1)) % mode_count;
+        return false;
+    }
+    if (index == 0) {
+        if (IS_LAYER_ON(_NAV)) {
+            if (clockwise) {
+                mk_max_speed = MIN(mk_max_speed + MOUSE_SPEED_STEP , 255);
+            } else {
+                mk_max_speed = MAX(mk_max_speed - MOUSE_SPEED_STEP, 1);
+            }
         } else {
-            tap_code(KC_VOLD);
+            switch (enc_mode_1[enc_idx[0]]) {
+                case _VOL:
+                    tap_code(clockwise ? KC_VOLU : KC_VOLD);
+                    break;
+                case _SCROLL_X: /* horizontal scroll */
+                    tap_code(clockwise ? MS_WHLR : MS_WHLL);
+                    break;
+            }
         }
-    } else if (index == 1) { /* Second encoder */
-        if (clockwise) {
-            tap_code(KC_VOLU);
-        } else {
-            tap_code(KC_VOLD);
+    } else {
+        switch (enc_mode_2[enc_idx[1]]) {
+            case _ZOOM:    /* zoom */
+                tap_code16(clockwise ? C(KC_EQL) : C(KC_MINUS));
+                print("zoom");
+                break;
+            case _SCROLL_Y:
+                tap_code(clockwise ? MS_WHLU : MS_WHLD);
+                print("scroll y");
+                break;
         }
+    return false;
     }
     return false;
 }
@@ -148,10 +207,16 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
 bool dip_switch_update_user(uint8_t index, bool active) {
   switch (index) {
     case 0:
-      if(active) { tap_code(KC_MUTE); } else {  }
+      if(active) {
+          tap_code(KC_MUTE);
+          print("Mute");
+      } else {  }
       break;
     case 1:
-      if(active) { tap_code(KC_3); } else {  }
+      if(active) {
+          tap_code(KC_3);
+          print("3");
+      } else {  }
       break;
   }
   return true;
