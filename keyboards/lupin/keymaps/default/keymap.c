@@ -42,53 +42,82 @@ static uint8_t enc_mode_2[2] = {_ZOOM, _SCROLL_Y};
 static bool enc_mod_active = false;
 static uint8_t enc_idx[2] = {0, 0};
 
+// Tap once: one-shot shift; twice: caps_word; three times: KC_3
 enum {
-    TD_LGUI_CAPS_WORD
+    TD_OSM_CAPS
 };
 
-void gui_caps_word_finished(tap_dance_state_t *state, void *user_data) {
+void osm_caps_finished(tap_dance_state_t *state, void *user_data) {
     if (state->count == 1) {
-        if (state->pressed) {
-            register_code(KC_LGUI);
-        } else {
-            tap_code(KC_LGUI);
-        }
+        set_oneshot_mods(MOD_BIT(KC_LSFT));
     } else if (state->count == 2) {
         caps_word_toggle();
+    } else if (state->count >= 3) {
+        tap_code(KC_3);
     }
 }
 
-void gui_caps_word_reset(tap_dance_state_t *state, void *user_data) {
-    unregister_code(KC_LGUI);
-}
-
 tap_dance_action_t tap_dance_actions[] = {
-    [TD_LGUI_CAPS_WORD] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, gui_caps_word_finished, gui_caps_word_reset)
+    [TD_OSM_CAPS] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, osm_caps_finished, NULL)
+};
+
+enum combos {
+    C_L_PAREN,
+    C_R_PAREN,
+    C_L_BRACE,
+    C_R_BRACE,
+    C_L_BRACKET,
+    C_R_BRACKET,
+    C_EQ,
+    C_MINUS,
+    C_UNDER,
+    COMBO_LENGTH
+};
+
+const uint16_t PROGMEM combo_l_paren[]   = {LCTL_T(KC_D),  LSFT_T(KC_F),    COMBO_END};
+const uint16_t PROGMEM combo_r_paren[]   = {RSFT_T(KC_J),  RCTL_T(KC_K),    COMBO_END};
+const uint16_t PROGMEM combo_l_brace[]   = {LALT_T(KC_S),  LCTL_T(KC_D),    COMBO_END};
+const uint16_t PROGMEM combo_r_brace[]   = {RCTL_T(KC_K),  RALT_T(KC_L),    COMBO_END};
+const uint16_t PROGMEM combo_l_bracket[] = {LGUI_T(KC_A),  LALT_T(KC_S),    COMBO_END};
+const uint16_t PROGMEM combo_r_bracket[] = {RALT_T(KC_L),  RGUI_T(KC_SCLN), COMBO_END};
+const uint16_t PROGMEM combo_eq[]        = {KC_V,          KC_B,            COMBO_END};
+const uint16_t PROGMEM combo_minus[]     = {KC_W,          KC_E,            COMBO_END};
+const uint16_t PROGMEM combo_under[]     = {KC_E,          KC_R,            COMBO_END};
+
+combo_t key_combos[COMBO_LENGTH] = {
+    [C_L_PAREN]   = COMBO(combo_l_paren,   KC_LPRN),
+    [C_R_PAREN]   = COMBO(combo_r_paren,   KC_RPRN),
+    [C_L_BRACE]   = COMBO(combo_l_brace,   KC_LCBR),
+    [C_R_BRACE]   = COMBO(combo_r_brace,   KC_RCBR),
+    [C_L_BRACKET] = COMBO(combo_l_bracket, KC_LBRC),
+    [C_R_BRACKET] = COMBO(combo_r_bracket, KC_RBRC),
+    [C_EQ]        = COMBO(combo_eq,        KC_EQL),
+    [C_MINUS]     = COMBO(combo_minus,     KC_MINS),
+    [C_UNDER]     = COMBO(combo_under,     KC_UNDS),
 };
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 /*
- * QWERTY
+ * QWERTY (mirrors tiny-micro default_layer)
  * ,-----------------------------------------.                           ,----------------------------------------.
- * |  ``  |   Q  |   W  |   E  |   R  |   T  |                          |   Y  |   U  |   I  |   O  |   P  |   ' |
+ * | TAB  |   Q  |   W  |   E  |   R  |   T  |                          |   Y  |   U  |   I  |   O  |   P  |   ' |
  * |------+------+------+------+------+------|--------|         ,-----|------+------+------+------+------+------|
- * | Tab  |   A  |   S  |   D  |   F  |   G  | stuff |         | Stuff|  H  |   J  |   K  |   L  |   ;  | Bspc |
+ * | ESC  | A(G) | S(A) | D(C) | F(S) |   G  |ENC_MOD|         |      |  H  | J(S) | K(C) | L(A) | ;(G) | Bspc |
  * |------+------+------+------+------+------|-------|        |------+-----+-------+------+------+------+------|
- * |LShift|   Z  |   X  |   C  |   V  |   B  | XXXX  |       | Stuff |  N  |   M  |   ,  |   .  |   /  |RShift|
+ * |OSM/CW|   Z  |   X  |   C  |   V  |   B  |       |        |      |  N  |   M  |   ,  |   .  |   /  |RShft |
  * `-----------------------------------------|-------|      |-------|-----------------------------------------'
- *               | LGUI | LAlt | LCTR |LOWER | /ENTER  /       \SPACE \  |RAISE | RCTR | RAlt | RGUI |
- *               `-------------------------------------'        '------''----------------------------'
+ *               | LGUI | LAlt | LCtl | SYMB | /ENT  /       \NUM/SPC\  |NAV/ESC| RCtl | RAlt | RGUI |
+ *               `-------------------------------------'        '-------''---------------------------'
  */
-
- [_QWERTY] = LAYOUT(
-    KC_GRV,   KC_Q,   KC_W        , KC_E        , KC_R         , KC_T,                               KC_Y,      KC_U      , KC_I        , KC_O        , KC_P,     KC_QUOT,
-    KC_TAB,   KC_A,   LALT_T(KC_S), LCTL_T(KC_D), LSFT_T(KC_F) , KC_G, ENC_MOD,              KC_NO,    KC_H,      RSFT_T(KC_J), RCTL_T(KC_K), RALT_T(KC_L), KC_SCLN,  KC_BSPC,
-    KC_LSFT,  KC_Z,   KC_X        , KC_C        , KC_V         , KC_B,                     KC_NO,    KC_N,      KC_M        , KC_COMM     , KC_DOT      , KC_SLSH,  KC_RSFT,
-        KC_LALT, KC_LCTL , MO(_SYMB) , LT(_EXTRA, KC_ENT), TD(TD_LGUI_CAPS_WORD),    KC_NO,   LT(_NUM, KC_SPC), LT(_NAV, KC_ESC), KC_RCTL, KC_RALT
-  ),
+[_QWERTY] = LAYOUT(
+    KC_GRV,          KC_Q,         KC_W,         KC_E,         KC_R,         KC_T,                               KC_Y,           KC_U,         KC_I,         KC_O,        KC_P,            KC_QUOT,
+    KC_TAB,          LGUI_T(KC_A), LALT_T(KC_S), LCTL_T(KC_D), LSFT_T(KC_F), KC_G, ENC_MOD,     KC_NO,          KC_H,           RSFT_T(KC_J), RCTL_T(KC_K), RALT_T(KC_L), RGUI_T(KC_SCLN), KC_BSPC,
+    TD(TD_OSM_CAPS), KC_Z,         KC_X,         KC_C,         KC_V,         KC_B,        KC_NO,                 KC_N,           KC_M,         KC_COMM,      KC_DOT,      KC_SLSH,         KC_RSFT,
+    KC_LALT, KC_LCTL, MO(_SYMB), KC_ENT, KC_LGUI,  KC_RGUI,  LT(_NUM, KC_SPC), LT(_NAV, KC_ESC), KC_RCTL, KC_RALT
+),
 
 /*
- * SYMB
+ * SYMB (mirrors tiny-micro symb_layer)
  * ,-----------------------------------------.                           ,----------------------------------------.
  * |  `   |   1  |   2  |   <  |   >  |   [  |                          |   ]  |   &  |   |  |   `  |      |      |
  * |------+------+------+------+------+------|--------|         ,-----|------+------+------+------+------+------|
@@ -96,56 +125,64 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |------+------+------+------+------+------|-------|        |------+------+------+------+------+------+------|
  * |      |   %  |   $  |   +  |   _  |      |        |        |      |   *  |   ^  |   ;  |   :  |   \  |      |
  * `-----------------------------------------|-------|      |-------|-----------------------------------------'
- *               | LAlt |TD CTL| SYMB |EXTRA | /ENTER  /       \SPACE \  | NUM  | NAV  | RCtl | RAlt |
- *               `-------------------------------------'        '------''----------------------------'
+ *               |      |      |      | SYMB |       |       |       |      |      |      |      |
+ *               `-------------------------------------'        '-------''---------------------------'
  */
- [_SYMB] = LAYOUT(
-    KC_GRV,  KC_1,    KC_2,   S(KC_COMM), S(KC_DOT),  KC_LBRC,                              KC_RBRC,  KC_AMPR, S(KC_BSLS), KC_GRV,  KC_TRNS, KC_TRNS,
-    KC_TRNS, KC_EXLM, KC_EQL, KC_MINUS,   KC_LPRN,    KC_LCBR,  KC_TRNS,       KC_TRNS,     KC_RCBR,  KC_RPRN, KC_DOT,     KC_HASH, KC_AT,   KC_TRNS,
-    KC_TRNS, KC_PERC, KC_DLR, KC_PLUS,    S(KC_MINS), XXXXXXX,               KC_TRNS,     S(KC_8),  S(KC_6), KC_SCLN,    KC_COLN, KC_BSLS, KC_TRNS,
-          KC_LALT, KC_TRNS, MO(_SYMB), LT(_EXTRA, KC_ENT), KC_TRNS,    KC_NO, LT(_NUM, KC_SPC), LT(_NAV, KC_ESC), KC_RCTL, KC_RALT
-  ),
+[_SYMB] = LAYOUT(
+    KC_GRV,  KC_1,    KC_2,    S(KC_COMM), S(KC_DOT), KC_LBRC,                               KC_RBRC, KC_AMPR, S(KC_BSLS), KC_GRV,  KC_TRNS, KC_TRNS,
+    KC_TRNS, KC_EXLM, KC_EQL,  KC_MINS,    KC_LPRN,   KC_LCBR, KC_TRNS,      KC_TRNS,        KC_RCBR, KC_RPRN, KC_DOT,     KC_HASH, KC_AT,   KC_TRNS,
+    KC_TRNS, KC_PERC, KC_DLR,  KC_PLUS,    KC_UNDS,   XXXXXXX,          KC_NO,               KC_ASTR, KC_CIRC, KC_SCLN,    KC_COLN, KC_BSLS, KC_TRNS,
+    KC_TRNS, KC_TRNS, KC_TRNS, KC_NO, KC_TRNS,    KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS
+),
 
 /*
- * NAV
+ * NAV (mirrors tiny-micro nav_layer)
  * ,-----------------------------------------.                           ,----------------------------------------.
- * | ESC  |   Q  |   W  |   E  |   R  |   T  |                          |   Y  |   U  |   I  |   O  |   P  |   ' |
+ * | ESC  |   Q  |   W  |   E  |   R  |   T  |                          |C(Del)|C(←) |      |C(→) |C(Bs)|      |
  * |------+------+------+------+------+------|--------|         ,-----|------+------+------+------+------+------|
- * | Tab  |   A  |   S  |   D  |   F  |   G  | stuff |         | Stuff| lA   | dA   |  uA  |  rA  |   ;  | Bspc |
+ * | TAB  |   A  | S(A) | D(C) | F(S) |   G  |        |         |      |  ←  |   ↓  |   ↑  |  →  | Home |      |
  * |------+------+------+------+------+------|-------|        |------+-----+-------+------+------+------+------|
- * |LShift|   Z  |   X  |   C  |   V  |   B  | XXXX  |       | Stuff |  N  |   M  |   ,  |   .  |   /  |RShift|
+ * |      |   Z  |   X  |   C  |   V  | CAPS |        |        |      |     | PgDn | PgUp |     | End  |      |
  * `-----------------------------------------|-------|      |-------|-----------------------------------------'
- *               | LGUI | LAlt | LCTR |LOWER | /ENTER  /       \SPACE \  |RAISE | RCTR | RAlt | RGUI |
- *               `-------------------------------------'        '------''----------------------------'
+ *               | LCtl | SYMB | ENT  | LGUI |       |       | Spc  |      | RCtl | RAlt |      |
+ *               `-------------------------------------'        '-------''---------------------------'
  */
-
- [_NAV] = LAYOUT(
-    KC_ESC,   KC_NO,   MS_WHLL , MS_UP , MS_WHLR , MS_WHLU,                               C(KC_DEL), C(KC_LEFT), KC_NO,   C(KC_RIGHT), C(KC_BSPC), KC_DEL,
-    KC_TAB,   KC_NO,   MS_LEFT , MS_DOWN, MS_RGHT , KC_NO  , KC_NO,              KC_NO,    KC_LEFT,   KC_DOWN,    KC_UP,   KC_RIGHT,    KC_HOME,    KC_TRNS,
-    KC_LSFT,  KC_NO,   KC_NO   , KC_NO  , KC_NO   , MS_WHLD,                     KC_NO,    KC_NO,     KC_PGDN,    KC_PGUP, KC_NO,       KC_END,     KC_TRNS,
-                    KC_LALT, KC_LCTL , MS_BTN2 , LT(_EXTRA, KC_ENT), MS_BTN1,            KC_NO,   LT(_NUM, KC_SPC), LT(_NAV, KC_ESCAPE), KC_RCTL, KC_RALT
-  ),
-
+[_NAV] = LAYOUT(
+    KC_ESC,  KC_Q,    KC_W,         KC_E,         KC_R,         KC_T,                               C(KC_DEL), C(KC_LEFT), KC_NO,   C(KC_RIGHT), C(KC_BSPC), KC_DEL,
+    KC_TAB,  KC_A,    LALT_T(KC_S), LCTL_T(KC_D), LSFT_T(KC_F), KC_G, KC_NO,      KC_NO,           KC_LEFT,   KC_DOWN,    KC_UP,   KC_RIGHT,    KC_HOME,    KC_TRNS,
+    KC_TRNS, KC_Z,    KC_X,         KC_C,         KC_V,         KC_CAPS,      KC_NO,                KC_NO,     KC_PGDN,    KC_PGUP, KC_NO,       KC_END,     KC_TRNS,
+    KC_LCTL, MO(_SYMB), KC_ENT, KC_LGUI, KC_NO,    KC_SPC, KC_TRNS, KC_RCTL, KC_RALT, KC_NO
+),
 
 /*
- * QWERTY
+ * NUM (mirrors tiny-micro num_layer; BT keycodes have no QMK equivalent, left side has F-keys)
  * ,-----------------------------------------.                           ,----------------------------------------.
- * | ESC  |   Q  |   W  |   E  |   R  |   T  |                          |   Y  |   U  |   I  |   O  |   P  |   ' |
+ * |  F1  |  F2  |  F3  |  F4  |  F5  |  F6  |                          |  K-  |  7   |  8   |  9   |  K/  | Del  |
  * |------+------+------+------+------+------|--------|         ,-----|------+------+------+------+------+------|
- * | Tab  |   A  |   S  |   D  |   F  |   G  | stuff |         | Stuff|  H  |   J  |   K  |   L  |   ;  | Bspc |
- * |------+------+------+------+------+------|-------|        |------+-----+-------+------+------+------+------|
- * |LShift|   Z  |   X  |   C  |   V  |   B  | XXXX  |       | Stuff |  N  |   M  |   ,  |   .  |   /  |RShift|
+ * |  F7  |  F8  |  F9  |  F10 |  F11 |  F12 |        |         | Num  |  K+  |  4   |  5   |  6   |  K*  | Bspc |
+ * |------+------+------+------+------+------|-------|        |------+------+------+------+------+------+------|
+ * |      |      |      |      |      |      |        |        |      |  0   |  1   |  2   |  3   |  K.  | KEnter|
  * `-----------------------------------------|-------|      |-------|-----------------------------------------'
- *               | LGUI | LAlt | LCTR |LOWER | /ENTER  /       \SPACE \  |RAISE | RCTR | RAlt | RGUI |
- *               `-------------------------------------'        '------''----------------------------'
+ *               |      |      |      |      |       |       |      |      |      |      |      |
+ *               `-------------------------------------'        '-------''---------------------------'
  */
+[_NUM] = LAYOUT(
+    KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,                                 KC_PMNS, KC_P7, KC_P8, KC_P9, KC_PSLS, KC_DEL,
+    KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,  KC_NO,      KC_NUM,           KC_PPLS, KC_P4, KC_P5, KC_P6, KC_PAST, KC_BSPC,
+    KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,       KC_NO,                  KC_P0,   KC_P1, KC_P2, KC_P3, KC_PDOT, KC_PENT,
+    KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,    KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS
+),
 
- [_NUM] = LAYOUT(
-    KC_TRNS,  KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,                            KC_KP_MINUS,  KC_KP_7, KC_KP_8,  KC_KP_9, KC_KP_SLASH,    KC_DEL,
-    KC_TRNS,  KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_NO,          KC_NUM,    KC_KP_PLUS,   KC_KP_4, KC_KP_5,  KC_KP_6, KC_KP_ASTERISK, KC_BSPC,
-    KC_TRNS,  KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,                 KC_NO,     KC_KP_0,      KC_KP_1, KC_KP_2,  KC_KP_3, KC_KP_DOT,    KC_KP_ENTER,
-                        KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,    LT(_NUM, KC_ESC), KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS
-  )};
+/*
+ * EXTRA / GAME (mirrors tiny-micro game_layer)
+ * Same as NAV but with LSHIFT and B on row 2 (no home-row mods on row 2)
+ */
+[_EXTRA] = LAYOUT(
+    KC_ESC,  KC_Q,    KC_W,         KC_E,         KC_R,         KC_T,                               C(KC_DEL), C(KC_LEFT), KC_NO,   C(KC_RIGHT), C(KC_BSPC), KC_NO,
+    KC_TAB,  KC_A,    LALT_T(KC_S), LCTL_T(KC_D), LSFT_T(KC_F), KC_G, KC_NO,      KC_NO,           KC_LEFT,   KC_DOWN,    KC_UP,   KC_RIGHT,    KC_HOME,    KC_TRNS,
+    KC_LSFT, KC_Z,    KC_X,         KC_C,         KC_V,         KC_B,         KC_NO,                KC_NO,     KC_PGDN,    KC_PGUP, KC_NO,       KC_END,     KC_TRNS,
+    KC_LCTL, MO(_SYMB), KC_ENT, KC_LGUI, KC_NO,    KC_SPC, KC_TRNS, KC_RCTL, KC_RALT, KC_NO
+)};
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
