@@ -6,6 +6,7 @@
 #include "action_layer.h"
 #include "caps_word.h"
 #include "keycodes.h"
+#include "keymap_us.h"
 #include "process_tap_dance.h"
 #include "quantum.h"
 #include "quantum_keycodes.h"
@@ -69,8 +70,11 @@ enum combos {
     C_L_BRACKET,
     C_R_BRACKET,
     C_EQ,
+    C_QUOT,
     C_MINUS,
     C_UNDER,
+    C_QUEST,
+    C_COL,
     COMBO_LENGTH
 };
 
@@ -81,8 +85,11 @@ const uint16_t PROGMEM combo_r_brace[]   = {RCTL_T(KC_K),  RALT_T(KC_L),    COMB
 const uint16_t PROGMEM combo_l_bracket[] = {LGUI_T(KC_A),  LALT_T(KC_S),    COMBO_END};
 const uint16_t PROGMEM combo_r_bracket[] = {RALT_T(KC_L),  RGUI_T(KC_SCLN), COMBO_END};
 const uint16_t PROGMEM combo_eq[]        = {KC_V,          KC_B,            COMBO_END};
+const uint16_t PROGMEM combo_qout[]        = {KC_C,          KC_V,            COMBO_END};
 const uint16_t PROGMEM combo_minus[]     = {KC_W,          KC_E,            COMBO_END};
 const uint16_t PROGMEM combo_under[]     = {KC_E,          KC_R,            COMBO_END};
+const uint16_t PROGMEM combo_quest[]     = {KC_U,          KC_I,            COMBO_END};
+const uint16_t PROGMEM combo_col[]     = {KC_M,          KC_COMM,            COMBO_END};
 
 combo_t key_combos[COMBO_LENGTH] = {
     [C_L_PAREN]   = COMBO(combo_l_paren,   KC_LPRN),
@@ -92,8 +99,11 @@ combo_t key_combos[COMBO_LENGTH] = {
     [C_L_BRACKET] = COMBO(combo_l_bracket, KC_LBRC),
     [C_R_BRACKET] = COMBO(combo_r_bracket, KC_RBRC),
     [C_EQ]        = COMBO(combo_eq,        KC_EQL),
+    [C_QUOT]        = COMBO(combo_qout,        KC_QUOT),
     [C_MINUS]     = COMBO(combo_minus,     KC_MINS),
     [C_UNDER]     = COMBO(combo_under,     KC_UNDS),
+    [C_QUEST]     = COMBO(combo_quest,     KC_QUES),
+    [C_COL]     = COMBO(combo_col,     KC_COLN),
 };
 
 enum joystick_modes {
@@ -117,7 +127,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
  [_QWERTY] = LAYOUT(
     KC_GRV,   KC_Q,   KC_W        , KC_E        , KC_R         , KC_T,                               KC_Y,      KC_U      , KC_I        , KC_O        , KC_P,     KC_QUOT,
-    KC_TAB,   KC_A,   LALT_T(KC_S), LCTL_T(KC_D), LSFT_T(KC_F) , KC_G, KC_NO,              KC_NO,    KC_H,      RSFT_T(KC_J), RCTL_T(KC_K), RALT_T(KC_L), KC_SCLN,  KC_BSPC,
+    KC_TAB,   LGUI_T(KC_A),   LALT_T(KC_S), LCTL_T(KC_D), LSFT_T(KC_F) , KC_G, KC_NO,              KC_NO,    KC_H,      RSFT_T(KC_J), RCTL_T(KC_K), RALT_T(KC_L), RGUI_T(KC_SCLN),  KC_BSPC,
     KC_LSFT,  KC_Z,   KC_X        , KC_C        , KC_V         , KC_B,                     KC_NO,    KC_N,      KC_M        , KC_COMM     , KC_DOT      , KC_SLSH,  KC_RSFT,
         KC_LALT, LCTL_T(KC_TAB) , LT(KC_ESC, _SYMB) , LT(_EXTRA, KC_ENT), KC_LGUI,    KC_NO,   LT(_NUM, KC_SPC), LT(_NAV, KC_BSPC), RCTL_T(KC_ESC), KC_RALT
   ),
@@ -189,7 +199,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_ESC,  KC_Q,    KC_W,         KC_E,         KC_R,         KC_T,                               C(KC_DEL), C(KC_LEFT), KC_NO,   C(KC_RIGHT), C(KC_BSPC), KC_NO,
     KC_TAB,  KC_A,    LALT_T(KC_S), LCTL_T(KC_D), LSFT_T(KC_F), KC_G, KC_NO,      KC_NO,           KC_LEFT,   KC_DOWN,    KC_UP,   KC_RIGHT,    KC_HOME,    KC_TRNS,
     KC_LSFT, KC_Z,    KC_X,         KC_C,         KC_V,         KC_B,         KC_NO,                KC_NO,     KC_PGDN,    KC_PGUP, KC_NO,       KC_END,     KC_TRNS,
-    KC_LCTL, MO(_SYMB), KC_ENT, KC_LGUI, KC_NO,    KC_SPC, KC_TRNS, KC_RCTL, KC_RALT, KC_NO
+    KC_LALT, KC_LCTL, MO(_SYMB), KC_ENT, KC_LGUI,    KC_NO,   KC_SPC, KC_TRNS, KC_RCTL, KC_RALT
 )};
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
@@ -296,11 +306,6 @@ uint16_t get_quick_tap_term(uint16_t keycode, keyrecord_t *record) {
         default:
             return QUICK_TAP_TERM;
     }
-}
-
-void keyboard_post_init_user(void) {
-    debug_enable = true;
-    print("Keyboard started\n");
 }
 
 
