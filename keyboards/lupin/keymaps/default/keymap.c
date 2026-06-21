@@ -43,23 +43,52 @@ static uint8_t enc_mode_2[2] = {_ZOOM, _SCROLL_Y};
 static bool enc_mod_active = false;
 static uint8_t enc_idx[2] = {0, 0};
 
-// Tap once: one-shot shift; twice: caps_word; three times: KC_3
+// Tap: one-shot shift; double-tap: caps_word; hold (any tap count): KC_RALT
 enum {
     TD_OSM_CAPS
 };
 
-void osm_caps_finished(tap_dance_state_t *state, void *user_data) {
+enum {
+    OSM_CAPS_TAP = 1,
+    OSM_CAPS_HOLD,
+    OSM_CAPS_DOUBLE_TAP,
+    OSM_CAPS_DOUBLE_HOLD,
+};
+
+static uint8_t osm_caps_dance_state = 0;
+
+uint8_t osm_caps_dance_step(tap_dance_state_t *state) {
     if (state->count == 1) {
-        set_oneshot_mods(MOD_BIT(KC_LSFT));
-    } else if (state->count == 2) {
-        caps_word_toggle();
-    } else if (state->count >= 3) {
-        tap_code(KC_3);
+        return state->pressed ? OSM_CAPS_HOLD : OSM_CAPS_TAP;
+    }
+    return state->pressed ? OSM_CAPS_DOUBLE_HOLD : OSM_CAPS_DOUBLE_TAP;
+}
+
+void osm_caps_finished(tap_dance_state_t *state, void *user_data) {
+    osm_caps_dance_state = osm_caps_dance_step(state);
+    switch (osm_caps_dance_state) {
+        case OSM_CAPS_TAP:
+            set_oneshot_mods(MOD_BIT(KC_LSFT));
+            break;
+        case OSM_CAPS_DOUBLE_TAP:
+            caps_word_toggle();
+            break;
+        case OSM_CAPS_HOLD:
+        case OSM_CAPS_DOUBLE_HOLD:
+            register_code(KC_RALT);
+            break;
     }
 }
 
+void osm_caps_reset(tap_dance_state_t *state, void *user_data) {
+    if (osm_caps_dance_state == OSM_CAPS_HOLD || osm_caps_dance_state == OSM_CAPS_DOUBLE_HOLD) {
+        unregister_code(KC_RALT);
+    }
+    osm_caps_dance_state = 0;
+}
+
 tap_dance_action_t tap_dance_actions[] = {
-    [TD_OSM_CAPS] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, osm_caps_finished, NULL)
+    [TD_OSM_CAPS] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, osm_caps_finished, osm_caps_reset)
 };
 
 enum combos {
@@ -129,7 +158,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_GRV,   KC_Q,   KC_W        , KC_E        , KC_R         , KC_T,                               KC_Y,      KC_U      , KC_I        , KC_O        , KC_P,     KC_QUOT,
     KC_TAB,   LGUI_T(KC_A),   LALT_T(KC_S), LCTL_T(KC_D), LSFT_T(KC_F) , KC_G, KC_NO,              KC_NO,    KC_H,      RSFT_T(KC_J), RCTL_T(KC_K), RALT_T(KC_L), RGUI_T(KC_SCLN),  KC_BSPC,
     KC_LSFT,  KC_Z,   KC_X        , KC_C        , KC_V         , KC_B,                     KC_NO,    KC_N,      KC_M        , KC_COMM     , KC_DOT      , KC_SLSH,  KC_RSFT,
-        KC_LALT, LCTL_T(KC_TAB) , LT(KC_ESC, _SYMB) , LT(_EXTRA, KC_ENT), KC_LGUI,    KC_NO,   LT(_NUM, KC_SPC), LT(_NAV, KC_BSPC), RCTL_T(KC_ESC), KC_RALT
+        KC_LALT, LCTL_T(KC_TAB) , LT(_SYMB, KC_ESC) , LT(_EXTRA, KC_ENT), KC_LGUI,    KC_NO,   LT(_NUM, KC_SPC), LT(_NAV, KC_BSPC), RCTL_T(KC_ESC), TD(TD_OSM_CAPS)
   ),
 
 /*
@@ -148,7 +177,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_GRV,  KC_1,    KC_2,   S(KC_COMM), S(KC_DOT),  KC_LBRC,                              KC_RBRC,  KC_AMPR, S(KC_BSLS), KC_GRV,  KC_TRNS, KC_DEL,
     KC_TRNS, KC_EXLM, KC_EQL, KC_MINUS,   KC_LPRN,    KC_LCBR,  KC_TRNS,       KC_TRNS,     KC_RCBR,  KC_RPRN, KC_DOT,     KC_HASH, KC_AT,   KC_TRNS,
     KC_TRNS, KC_PERC, KC_DLR, KC_PLUS,    S(KC_MINS), XXXXXXX,               KC_TRNS,     S(KC_8),  S(KC_6), KC_SCLN,    KC_COLN, KC_BSLS, KC_TRNS,
-          KC_LALT, KC_TRNS, MO(_SYMB), LT(_EXTRA, KC_ENT), KC_TRNS,    KC_NO, LT(_NUM, KC_SPC), LT(_NAV, KC_ESC), KC_RCTL, KC_RALT
+          KC_LALT, KC_TRNS, MO(_SYMB), LT(_EXTRA, KC_ENT), KC_TRNS,    KC_NO, LT(_NUM, KC_SPC), LT(_NAV, KC_ESC), KC_RCTL, TD(TD_OSM_CAPS)
   ),
 
 /*
@@ -165,10 +194,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  */
 
  [_NAV] = LAYOUT(
-    KC_ESC,   KC_Q,   KC_W        , KC_E        , KC_R         , KC_T,                               C(KC_DEL), C(KC_LEFT), KC_NO,   C(KC_RIGHT), C(KC_BSPC), KC_DEL,
-    KC_TAB,   KC_A,   LALT_T(KC_S), LCTL_T(KC_D), LSFT_T(KC_F) , KC_G, KC_NO,              KC_NO,    KC_LEFT,   KC_DOWN,    KC_UP,   KC_RIGHT,    KC_HOME,    KC_TRNS,
-    KC_LSFT,  KC_Z,   KC_X        , KC_C        , KC_V         , KC_B,                     KC_NO,    KC_NO,     KC_PGDN,    KC_PGUP, KC_NO,       KC_END,     KC_TRNS,
-                    KC_LALT, KC_LCTL , MO(_SYMB) , LT(_EXTRA, KC_ENT), KC_LGUI,            KC_NO,   LT(_NUM, KC_SPC), LT(_NAV, KC_ESCAPE), KC_RCTL, KC_RALT
+    KC_ESC,   KC_Q,   KC_W        , KC_E        , KC_R         , KC_T,                               C(KC_DEL), C(KC_LEFT), C(KC_RIGHT), C(KC_BSPC), KC_DEL, KC_NO,
+    KC_TAB,   KC_A,   LALT_T(KC_S), LCTL_T(KC_D), LSFT_T(KC_F) , KC_G, KC_NO,              KC_NO,    KC_LEFT,   KC_DOWN,    KC_UP,   KC_RIGHT,    KC_BSPC,    KC_NO,
+    KC_LSFT,  KC_Z,   KC_X        , KC_C        , KC_V         , KC_B,                     KC_NO,    KC_HOME,     KC_PGDN,    KC_PGUP, KC_END,       KC_NO,    KC_NO,
+                    KC_LALT, KC_LCTL , MO(_SYMB) , LT(_EXTRA, KC_ENT), KC_LGUI,            KC_NO,   LT(_NUM, KC_SPC), LT(_NAV, KC_ESCAPE), KC_RCTL, TD(TD_OSM_CAPS)
   ),
 
 
@@ -199,7 +228,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_ESC,  KC_Q,    KC_W,         KC_E,         KC_R,         KC_T,                               C(KC_DEL), C(KC_LEFT), KC_NO,   C(KC_RIGHT), C(KC_BSPC), KC_NO,
     KC_TAB,  KC_A,    LALT_T(KC_S), LCTL_T(KC_D), LSFT_T(KC_F), KC_G, KC_NO,      KC_NO,           KC_LEFT,   KC_DOWN,    KC_UP,   KC_RIGHT,    KC_HOME,    KC_TRNS,
     KC_LSFT, KC_Z,    KC_X,         KC_C,         KC_V,         KC_B,         KC_NO,                KC_NO,     KC_PGDN,    KC_PGUP, KC_NO,       KC_END,     KC_TRNS,
-    KC_LALT, KC_LCTL, MO(_SYMB), KC_ENT, KC_LGUI,    KC_NO,   KC_SPC, KC_TRNS, KC_RCTL, KC_RALT
+    KC_LALT, KC_LCTL, MO(_SYMB), KC_ENT, KC_LGUI,    KC_NO,   KC_SPC, KC_TRNS, KC_RCTL, TD(TD_OSM_CAPS)
 )};
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
@@ -252,6 +281,24 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
     return false;
     }
     return false;
+}
+
+#define TRACKPAD_SCROLL_DIVISOR 4
+
+report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
+    static int16_t scroll_h_accum = 0;
+    static int16_t scroll_v_accum = 0;
+
+    if (mouse_report.h != 0 || mouse_report.v != 0) {
+        scroll_h_accum += mouse_report.h;
+        scroll_v_accum += mouse_report.v;
+        mouse_report.h  = scroll_h_accum / TRACKPAD_SCROLL_DIVISOR;
+        mouse_report.v  = scroll_v_accum / TRACKPAD_SCROLL_DIVISOR;
+        scroll_h_accum -= mouse_report.h * TRACKPAD_SCROLL_DIVISOR;
+        scroll_v_accum -= mouse_report.v * TRACKPAD_SCROLL_DIVISOR;
+    }
+
+    return mouse_report;
 }
 
 bool dip_switch_update_user(uint8_t index, bool active) {
